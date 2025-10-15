@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>GHMDC - Digital Record Management</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <!-- LOGIN PAGE -->
+  <div id="login-container" class="container-fluid">
+    <div class="row justify-content-center align-items-center vh-100">
+      <div class="col-11 col-sm-10 col-md-8 col-lg-6 col-xl-5">
+        <div class="card shadow-sm border-0 green-glass-card">
+          <div class="row g-0">
+            <div class="col-md-5 d-none d-md-flex align-items-center justify-content-center green-glass-panel">
+              <div class="text-center px-4">
+                <img src="https://via.placeholder.com/100" alt="GHMDC Logo" class="mb-3 rounded-circle logo-glow">
+                <h5 class="text-white mb-1 fw-light">GHMDC</h5>
+                <small class="text-white-75">Medical Records</small>
+              </div>
+            </div>
+
+            <div class="col-md-7">
+              <div class="card-body p-4 p-md-5">
+                <h4 class="card-title mb-1 fw-light text-dark">Welcome Back</h4>
+                <p class="text-muted mb-3 small">Sign in to access the digital record management system</p>
+
+                <form id="login-form" class="text-start">
+                  <div class="mb-3">
+                    <label for="username" class="form-label small text-muted">Username</label>
+                    <input type="text" class="form-control green-glass-input" id="username" placeholder="Enter username" required>
+                  </div>
+
+                  <div class="mb-3 position-relative">
+                    <label for="password" class="form-label small text-muted">Password</label>
+                    <input type="password" class="form-control green-glass-input" id="password" placeholder="Enter password" required>
+                    <button type="button" class="btn btn-outline-secondary btn-sm position-absolute top-50 end-0 translate-middle-y me-3 green-glass-toggle" id="pwd-toggle" aria-label="Toggle password visibility">
+                      <i class="bi bi-eye"></i>
+                    </button>
+                  </div>
+
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="form-check">
+                      <input class="form-check-input green-glass-checkbox" type="checkbox" id="remember-me" aria-describedby="remember-me-label">
+                      <label class="form-check-label small text-muted" for="remember-me">Remember me</label>
+                      <span id="remember-me-label" class="visually-hidden">Check this to stay signed in</span>
+                    </div>
+                    <a href="#" class="small text-decoration-none" aria-label="Forgot password">Forgot?</a>
+                  </div>
+
+                  <div id="login-error" class="alert alert-danger d-none py-2" role="alert" aria-live="assertive">
+                    Invalid username or password.
+                  </div>
+
+                  <div class="d-grid mt-3">
+                    <button type="submit" class="btn btn-primary green-glass-button" id="signin-btn">Sign in</button>
+                  </div>
+
+                  <div class="text-center mt-4 small text-muted">
+                    Demo accounts: <strong>doctor</strong>/<em>password123</em>, <strong>admin</strong>/<em>admin123</em>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div id="app-container" class="d-none">
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm nav-accent">
+      <div class="container-fluid">
+        <a class="navbar-brand d-flex align-items-center gap-2" href="#">
+          <img src="https://via.placeholder.com/28" alt="" class="rounded-circle" width="28" height="28">
+          <span class="fw-semibold">GHMDC</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item"><a class="nav-link active" href="#" data-view="dashboard-view"><i class="bi bi-speedometer2 me-1"></i> Dashboard</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" data-view="patients-view"><i class="bi bi-people me-1"></i> Patients</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" id="billing-nav" data-view="billing-view"><i class="bi bi-receipt me-1"></i> Billing</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" id="reports-nav" data-view="reports-view"><i class="bi bi-bar-chart-line me-1"></i> Reports</a></li>
+          </ul>
+          <div class="d-flex align-items-center">
+            <span class="navbar-text me-3 text-muted">Role: <span id="user-role">Admin</span></span>
+            <button id="logout-btn" class="btn btn-outline-secondary btn-sm">Logout</button>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <main class="container my-4">
+
+      <!-- DASHBOARD -->
+      <div id="dashboard-view" class="view active">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h2 class="mb-0">Dashboard</h2>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-4">
+            <div class="card stat-card shadow-sm">
+              <div class="card-body d-flex align-items-center gap-3">
+                <div class="stat-icon bg-primary text-white rounded-circle"><i class="bi bi-person-lines-fill"></i></div>
+                <div>
+                  <div class="small text-muted">Total Patients</div>
+                  <div class="h4 mb-0" id="total-patients-stat">0</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="card stat-card shadow-sm">
+              <div class="card-body d-flex align-items-center gap-3">
+                <div class="stat-icon bg-warning text-dark rounded-circle"><i class="bi bi-clock-history"></i></div>
+                <div>
+                  <div class="small text-muted">Pending Results</div>
+                  <div class="h4 mb-0" id="pending-results-stat">0</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="card stat-card shadow-sm">
+              <div class="card-body d-flex align-items-center gap-3">
+                <div class="stat-icon bg-success text-white rounded-circle"><i class="bi bi-cash-stack"></i></div>
+                <div>
+                  <div class="small text-muted">Total Revenue</div>
+                  <div class="h4 mb-0" id="total-revenue-stat">₱0.00</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="row g-3">
+          <div class="col-lg-8">
+            <div class="card shadow-sm">
+              <div class="card-body">
+                <h6 class="card-title mb-3">Revenue Trend</h6>
+                <canvas id="revenueTrendChart" height="160"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-4">
+            <div class="card shadow-sm">
+              <div class="card-body">
+                <h6 class="card-title mb-3">Revenue Breakdown</h6>
+                <canvas id="revenueBreakdownChart" height="160"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PATIENTS -->
+      <div id="patients-view" class="view">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2>Patient Records</h2>
+          <button id="add-patient-btn" class="btn btn-primary green-glass-button">+ Add New Patient</button>
+        </div>
+
+        <input type="text" id="patient-search" class="form-control green-glass-input mb-3 shadow-sm" placeholder="🔍 Search patients by name, ID, or contact...">
+
+        <div class="table-responsive">
+          <table class="table table-hover align-middle shadow-sm">
+            <thead class="table-light">
+              <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Date of Birth</th>
+                <th>Contact</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="patients-table-body">
+              <tr><td colspan="5" class="text-center text-muted">No data available</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- PATIENT DETAIL VIEW -->
+      <div id="patient-detail-view" class="view">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2 id="patient-name-header">Patient Details</h2>
+          <div class="d-flex gap-2">
+            <button id="export-patient-btn" class="btn btn-outline-primary btn-sm">Export Profile</button>
+            <button id="back-to-patients-btn" class="btn btn-secondary">Back to Patients</button>
+          </div>
+        </div>
+
+        <div class="card shadow-sm mb-4 green-glass-card">
+          <div class="card-body">
+            <h5 class="card-title">Patient Information</h5>
+            <p><strong>ID:</strong> <span id="patient-id-detail"></span></p>
+            <p><strong>Date of Birth:</strong> <span id="patient-dob-detail"></span></p>
+            <p><strong>Address:</strong> <span id="patient-address-detail"></span></p>
+            <p><strong>Contact:</strong> <span id="patient-contact-detail"></span></p>
+            <p><strong>Medical History:</strong> <span id="patient-history-detail"></span></p>
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <h5 class="mb-2">Diagnostic Results</h5>
+            <div class="d-flex mb-2 gap-2">
+              <button id="add-result-btn" class="btn btn-sm btn-primary">+ Add Result</button>
+            </div>
+            <div class="table-responsive mb-4">
+              <table class="table table-hover align-middle shadow-sm">
+                <thead class="table-light">
+                  <tr><th>Date</th><th>Test Name</th><th>Result</th><th>Status</th><th>Files</th><th>Actions</th></tr>
+                </thead>
+                <tbody id="results-table-body">
+                  <tr><td colspan="6" class="text-center text-muted">No diagnostic results found</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <h5 class="mb-2">Documents</h5>
+            <div class="card p-3 mb-3">
+              <div class="mb-2">
+                <input placeholder =" upload here"type="file" id="patient-doc-input" class="form-control form-control-sm" />
+              </div>
+              <div class="d-grid mb-2">
+                <button id="upload-doc-btn" class="btn btn-sm btn-success">Upload Document</button>
+              </div>
+              <ul id="patient-doc-list" class="list-group list-group-flush"></ul>
+            </div>
+
+            <h5 class="mb-2">Billing / Invoices</h5>
+            <div class="d-flex gap-2 mb-2">
+              <button id="generate-invoice-btn" class="btn btn-sm btn-primary">Generate Invoice</button>
+              <button id="print-invoices-btn" class="btn btn-sm btn-outline-secondary">Print / Export</button>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-sm table-hover">
+                <thead class="table-light"><tr><th>Invoice</th><th>Date</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead>
+                <tbody id="patient-billing-table-body">
+                  <tr><td colspan="5" class="text-center text-muted">No billing history found</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BILLING -->
+      <div id="billing-view" class="view">
+        <h2 class="mb-4">Billing Information</h2>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle shadow-sm">
+            <thead class="table-light">
+              <tr>
+                <th>Invoice ID</th>
+                <th>Patient Name</th>
+                <th>Date</th>
+                <th>Amount</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="billing-table-body">
+              <tr><td colspan="5" class="text-center text-muted">No billing data</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- REPORTS -->
+      <div id="reports-view" class="view">
+        <h2 class="mb-4">Financial Reports</h2>
+        <div class="card shadow-sm green-glass-card">
+          <div class="card-body">
+            <h5 class="card-title mb-3">Overall Summary</h5>
+            <p>Total Patients: <strong id="report-total-patients">0</strong></p>
+            <p>Total Billed Amount: <strong id="report-total-billed">₱0.00</strong></p>
+            <p>Total Collected Amount: <strong id="report-total-collected">₱0.00</strong></p>
+
+            <!-- Added financial report chart -->
+            <div class="mt-3">
+              <h6 class="card-title">Revenue by Month</h6>
+              <canvas id="financialReportChart" height="160"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- PATIENT MODAL -->
+    <div class="modal fade" id="patient-modal" tabindex="-1" aria-labelledby="patient-modal-title" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content green-glass-modal">
+          <div class="modal-header border-0">
+            <h5 class="modal-title" id="patient-modal-title">Add New Patient</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="patient-form">
+              <input type="hidden" id="patient-id-input">
+              <div class="mb-3">
+                <label for="patient-name" class="form-label text-muted">Name *</label>
+                <input type="text" class="form-control green-glass-input" id="patient-name" required>
+              </div>
+              <div class="mb-3">
+                <label for="patient-dob" class="form-label text-muted">Date of Birth *</label>
+                <input type="date" class="form-control green-glass-input" id="patient-dob" required>
+              </div>
+              <div class="mb-3">
+                <label for="patient-contact" class="form-label text-muted">Contact *</label>
+                <input type="text" class="form-control green-glass-input" id="patient-contact" required>
+              </div>
+              <div class="mb-3">
+                <label for="patient-address" class="form-label text-muted">Address</label>
+                <input type="text" class="form-control green-glass-input" id="patient-address">
+              </div>
+              <div class="mb-3">
+                <label for="patient-history" class="form-label text-muted">Medical History</label>
+                <textarea class="form-control green-glass-input" id="patient-history" rows="3"></textarea>
+              </div>
+              <div class="d-grid">
+                <button type="submit" class="btn btn-primary green-glass-button">Save</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LAB RESULT MODAL -->
+    <div class="modal fade" id="lab-result-modal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <form id="lab-result-form" class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Add Lab Result</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="lab-patient-id">
+            <div class="mb-2">
+              <label class="form-label small">Test name</label>
+              <input id="lab-test-name" class="form-control form-control-sm" required />
+            </div>
+            <div class="mb-2">
+              <label class="form-label small">Result / Notes</label>
+              <textarea id="lab-result-text" class="form-control form-control-sm" rows="3"></textarea>
+            </div>
+            <div class="mb-2">
+              <label class="form-label small">Status</label>
+              <select id="lab-status" class="form-select form-select-sm">
+                <option value="Pending">Pending</option>
+                <option value="Completed">Completed</option>
+                <option value="Reviewed">Reviewed</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label small">Attach file</label>
+              <input id="lab-file-input" type="file" class="form-control form-control-sm" />
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary btn-sm" type="button" data-bs-dismiss="modal">Cancel</button>
+            <button class="btn btn-primary btn-sm" type="submit">Save Result</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- CHANGE PASSWORD MODAL -->
+    <div class="modal fade" id="change-password-modal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-sm modal-dialog-centered">
+        <form id="change-password-form" class="modal-content">
+          <div class="modal-header"><h5 class="modal-title">Change Password</h5> <button type="button" aria-placeholder=" " class="btn-close" data-bs-dismiss="modal"></button></div>
+          <div class="modal-body">
+            <div class="mb-2"><label class="form-label small">Username</label><input id="pwd-user" class="form-control form-control-sm" /></div>
+            <div class="mb-2"><label class="form-label small">Old password</label><input id="pwd-old" type="password" class="form-control form-control-sm" /></div>
+            <div class="mb-2"><label class="form-label small">New password</label><input id="pwd-new" type="password" class="form-control form-control-sm" /></div>
+          </div>
+          <div class="modal-footer"><button class="btn btn-secondary btn-sm" type="button" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary btn-sm" type="submit">Change</button></div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart.js + Bootstrap JS + App script -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
