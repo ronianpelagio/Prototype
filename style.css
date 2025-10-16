@@ -1,126 +1,210 @@
-/* Base theme + improved color palette */
-:root{
-  --bg-a: #f7fbfb;
-  --card-bg: rgba(255,255,255,0.9);
+/* Base theme + improved color palette for medical theme: softer blues and greens for trust and calmness */
+:root {
+  --bg-a: #f0f7ff; /* Light blue background */
+  --card-bg: rgba(255, 255, 255, 0.95);
   --muted: #6c757d;
-  --accent: #0d6efd;
-  --accent-2: #20c997;
-  --panel: linear-gradient(180deg,#e6fff6,#eef9ff);
+  --accent: #007bff; /* Primary blue */
+  --accent-2: #28a745; /* Success green */
+  --panel: linear-gradient(180deg, #e3f2fd, #f1f9ff);
+  --danger: #dc3545; /* Red for warnings */
+  --warning: #ffc107; /* Yellow for pending */
+  --success: #28a745; /* Green for completed */
+  --info: #17a2b8; /* Teal for info */
+  /* Dark mode variables */
+  --dark-bg: #1a1f2e;
+  --dark-card-bg: #2a3144;
+  --dark-text: #e0e6ed;
+  --dark-muted: #9aa4b2;
+  --dark-panel: linear-gradient(180deg, #2e3a55, #1f2940);
+  --dark-table-bg: #2a3144;
+  --dark-table-header: #343b50;
 }
 
+
+
 /* Reset & body */
-*{box-sizing:border-box}
-body{
+* { box-sizing: border-box; }
+body {
   font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-  margin:0;
-  background: radial-gradient(1200px 400px at 10% 10%, #eef9f7 0%, transparent 20%), linear-gradient(180deg,#fbfdff,#f6fbff);
-  color:#1f2937;
-  -webkit-font-smoothing:antialiased;
-  -moz-osx-font-smoothing:grayscale;
-  min-height:100vh;
+  margin: 0;
+  background: radial-gradient(800px 300px at 10% 10%, #e3f2fd 0%, transparent 20%), linear-gradient(180deg, #f8fbff, #f0f7ff);
+  color: #1f2937;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+  font-size: 16px; /* Base font size for scaling */
 }
 
 /* Views */
-.view{display:none; animation:fadeIn .18s ease-in-out;}
-.view.active{display:block}
+.view { display: none; animation: fadeIn .18s ease-in-out; }
+.view.active { display: block; }
 
 /* Cards / glass */
-.green-glass-card{
+.green-glass-card {
   background: var(--card-bg);
-  border-radius:12px;
-  border: 1px solid rgba(16,24,40,0.04);
-  overflow:hidden;
+  border-radius: 10px;
+  border: 1px solid rgba(16, 24, 40, 0.04);
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
-.green-glass-panel{
-  background: linear-gradient(180deg, rgba(32,201,151,0.14), rgba(13,110,253,0.06));
-  min-height:100%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
+.green-glass-panel {
+  background: linear-gradient(180deg, rgba(40, 167, 69, 0.1), rgba(0, 123, 255, 0.05));
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Login form inputs */
-.green-glass-input{
+.green-glass-input {
   background: #fff;
-  border: 1px solid rgba(16,24,40,0.06);
-  border-radius: 12px;
+  border: 1px solid rgba(16, 24, 40, 0.06);
+  border-radius: 8px;
   padding: .75rem 1rem;
   color: #111827;
-  transition: box-shadow .18s ease, transform .12s ease;
+  transition: box-shadow .18s ease, transform .12s ease, border-color .18s ease;
+  font-size: 0.95rem;
 }
-.green-glass-input::placeholder{color:#9aa4b2}
-.green-glass-input:focus{
-  box-shadow: 0 10px 30px rgba(13,110,253,0.06);
+.green-glass-input::placeholder { color: #9aa4b2; }
+.green-glass-input:focus {
+  box-shadow: 0 0 0 0.25rem rgba(0, 123, 255, 0.25);
   transform: translateY(-1px);
   border-color: var(--accent);
   outline: none;
 }
 
 /* Buttons */
-.green-glass-button{
-  background: linear-gradient(90deg,var(--accent),#198754);
-  border:none;
-  color:#fff;
-  border-radius:10px;
-  padding:.65rem .9rem;
-  box-shadow: 0 8px 24px rgba(13,110,253,0.08);
+.green-glass-button {
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  border: none;
+  color: #fff;
+  border-radius: 8px;
+  padding: .65rem 1.2rem;
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.1);
   transition: transform .12s ease, box-shadow .12s ease;
+  font-size: 0.9rem;
+  touch-action: manipulation; /* Improve touch responsiveness */
 }
-.green-glass-button:hover{transform:translateY(-3px); box-shadow:0 18px 40px rgba(13,110,253,0.10);}
+.green-glass-button:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0, 123, 255, 0.15); }
 
 /* Toggle */
-.green-glass-toggle{
-  border-radius:50%;
-  width:38px; height:38px;
-  display:inline-flex; align-items:center; justify-content:center;
-  background:transparent; border:none; color:#6b7280;
+.green-glass-toggle {
+
+  border-radius: 50%;
+  width: 36px; height: 36px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent; border: none; color: #6b7280;
+  transition: color .18s ease;
+  font-size: 1rem;
 }
+.green-glass-toggle:hover { color: var(--accent); }
 .position-relative .green-glass-toggle {
   top: 50%;
-  transform: translateY(-4%);
+  transform: translateY(-50%);
+}
+
+/* Dark mode toggle button */
+.theme-toggle-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 1rem;
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: color .18s ease;
+}
+.theme-toggle-btn:hover {
+  color: var(--accent);
+}
+[data-theme="dark"] .theme-toggle-btn {
+  color: var(--dark-muted);
+}
+[data-theme="dark"] .theme-toggle-btn:hover {
+  color: var(--accent);
 }
 
 /* Stat cards */
-.stat-card{border-radius:10px; background:white; border:1px solid rgba(16,24,40,0.04)}
-.stat-icon{width:56px;height:56px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;border-radius:50%}
+.stat-card { border-radius: 8px; background: white; border: 1px solid rgba(16, 24, 40, 0.04); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03); }
+.stat-icon { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 1rem; border-radius: 50%; }
 
 /* Table tweaks */
-.table{background:#fff}
-.table thead th{border-bottom:1px solid rgba(16,24,40,0.06)}
+.table { background: #fff; border-radius: 8px; overflow: hidden; }
+.table thead th { border-bottom: 1px solid rgba(16, 24, 40, 0.06); background: #f8f9fa; font-size: 0.85rem; padding: 0.5rem; }
+.table tbody td { font-size: 0.85rem; padding: 0.5rem; vertical-align: middle; }
 
 /* Navbar */
-.nav-accent{background:linear-gradient(90deg,#0d6efd,#20c997); color:#fff}
-.nav-accent .navbar-brand, .nav-accent .nav-link{color:#fff}
-.nav-accent .nav-link.active{font-weight:600}
+.nav-accent { background: linear-gradient(90deg, var(--accent), var(--accent-2)); color: #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); }
+.nav-accent .navbar-brand, .nav-accent .nav-link { color: #fff; font-size: 0.9rem; padding: 0.5rem 0.75rem; }
+.nav-accent .nav-link.active { font-weight: 600; background: rgba(255, 255, 255, 0.15); border-radius: 6px; }
+.navbar-nav { flex-wrap: wrap; }
+.navbar-toggler { border: none; }
 
 /* Misc */
-.text-muted{color:var(--muted)}
-.small{font-size:.85rem}
+.text-muted { color: var(--muted); }
+.small { font-size: 0.8rem; }
 
 /* Animations */
-@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
 /* Patient documents list */
-#patient-doc-list { max-height: 220px; overflow:auto; margin-top:.5rem; }
-#patient-doc-list .list-group-item { display:flex; align-items:center; justify-content:space-between; gap:.5rem; }
+#patient-doc-list { max-height: 180px; overflow: auto; margin-top: .5rem; }
+#patient-doc-list .list-group-item { display: flex; align-items: center; justify-content: space-between; gap: .5rem; border: none; padding: .5rem; border-bottom: 1px solid #eee; font-size: 0.85rem; }
 
 /* Small icon buttons in tables */
-.table .action-icon { cursor:pointer; color:#374151; }
-.table .action-icon:hover { color:var(--accent); }
-
-/* Small responsive tweaks for panels */
-@media (max-width:768px){
-  #patient-doc-list{max-height:160px}
-}
+.table .action-icon { cursor: pointer; color: #374151; transition: color .18s ease; font-size: 0.9rem; }
+.table .action-icon:hover { color: var(--accent); }
 
 /* Modal small fixes */
-.modal-content .form-control-sm { border-radius:8px; }
+.modal-content { border-radius: 10px; }
+.modal-content .form-control-sm { border-radius: 6px; font-size: 0.85rem; }
 
-/* Chart card min-height so graphs look consistent */
-.card canvas { max-height: 320px; }
+/* Chart card min-height */
+.card canvas { max-height: 280px; }
 
-/* Responsive */
-@media (max-width:768px){
-  .green-glass-panel{display:none}
-  .green-glass-card{border-radius:10px}
+/* Improved tabs for patient details */
+.nav-tabs { border-bottom: 1px solid rgba(16, 24, 40, 0.1); }
+.nav-tabs .nav-link { border: none; color: var(--muted); padding: .5rem 1rem; font-size: 0.9rem; }
+.nav-tabs .nav-link.active { color: var(--accent); border-bottom: 2px solid var(--accent); font-weight: 500; }
+.tab-pane { padding: 1rem 0; }
+
+/* Status badges */
+.badge-pending { background: var(--warning); color: #212529; }
+.badge-completed { background: var(--success); color: #fff; }
+.badge-reviewed { background: var(--info); color: #fff; }
+
+/* Mobile-specific styles */
+@media (max-width: 768px) {
+  body { font-size: 14px; }
+  .container { padding: 0 12px; }
+  .green-glass-card { border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04); }
+  .green-glass-panel { display: none; }
+  .green-glass-button { padding: .5rem 1rem; font-size: 0.85rem; }
+  .green-glass-input { font-size: 0.85rem; padding: .5rem 0.75rem; }
+  .navbar-nav { flex-direction: column; padding: 0.5rem; }
+  .nav-link { padding: 0.5rem; font-size: 0.85rem; }
+  .navbar-text { font-size: 0.85rem; }
+  .stat-card { padding: 0.5rem; }
+  .stat-icon { width: 36px; height: 36px; font-size: 0.9rem; }
+  .table thead th, .table tbody td { font-size: 0.8rem; padding: 0.4rem; }
+  #patient-doc-list { max-height: 140px; }
+  .modal-dialog { margin: 0.5rem; max-width: 95vw; }
+  .modal-body { padding: 1rem; }
+  .nav-tabs .nav-link { padding: 0.5rem 0.75rem; font-size: 0.85rem; }
+  .tab-content { padding: 0.75rem 0; }
+}
+
+@media (max-width: 576px) {
+  body { font-size: 13px; }
+  .container { padding: 0 8px; }
+  .green-glass-button { padding: .45rem 0.8rem; font-size: 0.8rem; }
+  .green-glass-input { font-size: 0.8rem; padding: .45rem 0.6rem; }
+  .table { font-size: 0.75rem; }
+  .table thead th, .table tbody td { padding: 0.3rem; }
+  .stat-card .h4 { font-size: 1.25rem; }
+  .card-body { padding: 0.75rem; }
+  .nav-tabs .nav-link { padding: 0.4rem 0.6rem; font-size: 0.8rem; }
+  .modal-content .form-label { font-size: 0.8rem; }
+  .modal-footer .btn { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
+  #patient-doc-list .list-group-item { flex-direction: column; align-items: flex-start; gap: 0.3rem; }
+  #patient-doc-list .list-group-item .d-flex { flex-wrap: wrap; gap: 0.3rem; }
 }
