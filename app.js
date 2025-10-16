@@ -1,23 +1,23 @@
 document.addEventListener('DOMContentLoaded', () => {
     const defaultPatients = [
-        { id: 1001, name: 'Naruto D. Monki', dob: '1985-04-12', contact: '09171234567', address: 'Ermita, Manila', history: 'Hypertension, Allergic to penicillin' },
-        { id: 1002, name: 'Ronian', dob: '1992-08-25', contact: '09287654321', address: 'Sampaloc, Manila', history: 'Asthma' },
-        { id: 1003, name: 'Pares overload', dob: '1970-01-30', contact: '09998887777', address: 'Paco, Manila', history: 'None' }
+        { id: 1001, name: 'Naruto D. Monki', dob: '1985-04-12', contact: '09171234567', address: 'Ermita, Manila', history: 'Hypertension, Allergic to penicillin', documents: [] },
+        { id: 1002, name: 'Ronian', dob: '1992-08-25', contact: '09287654321', address: 'Sampaloc, Manila', history: 'Asthma', documents: [] },
+        { id: 1003, name: 'Pares overload', dob: '1970-01-30', contact: '09998887777', address: 'Paco, Manila', history: 'None', documents: [] }
     ];
 
     const defaultResults = [
-        { resultId: 1, patientId: 1001, date: '2025-10-10', testName: 'CBC', result: 'Normal' },
-        { resultId: 2, patientId: 1001, date: '2025-10-12', testName: 'X-Ray', result: 'Pending' },
-        { resultId: 3, patientId: 1002, date: '2025-10-11', testName: 'Urinalysis', result: 'Normal' }
+        { resultId: 1, patientId: 1001, date: '2025-10-10', testName: 'CBC', result: 'Normal', status: 'Completed', files: [] },
+        { resultId: 2, patientId: 1001, date: '2025-10-12', testName: 'X-Ray', result: 'Pending', status: 'Pending', files: [] },
+        { resultId: 3, patientId: 1002, date: '2025-10-11', testName: 'Urinalysis', result: 'Normal', status: 'Completed', files: [] }
     ];
 
     const defaultBilling = [
-        { invoiceId: 5001, patientId: 1001, date: '2025-10-10', amount: 500.00, status: 'Paid' },
-        { invoiceId: 5002, patientId: 1002, date: '2025-10-11', amount: 350.00, status: 'Paid' },
-        { invoiceId: 5003, patientId: 1001, date: '2025-10-12', amount: 1200.00, status: 'Unpaid' }
+        { invoiceId: 5001, patientId: 1001, date: '2025-10-10', amount: 500.00, status: 'Paid', payments: [] },
+        { invoiceId: 5002, patientId: 1002, date: '2025-10-11', amount: 350.00, status: 'Paid', payments: [] },
+        { invoiceId: 5003, patientId: 1001, date: '2025-10-12', amount: 1200.00, status: 'Unpaid', payments: [] }
     ];
 
-    const users = {
+    let users = localStorage.getItem('ghmdc_users_v1') ? JSON.parse(localStorage.getItem('ghmdc_users_v1')) : {
         doctor: { password: 'password123', role: 'Medical Staff' },
         admin: { password: 'admin123', role: 'Management' }
     };
@@ -26,7 +26,9 @@ document.addEventListener('DOMContentLoaded', () => {
         patients: 'ghmdc_patients_v1',
         results: 'ghmdc_results_v1',
         billing: 'ghmdc_billing_v1',
-        rememberedUser: 'ghmdc_remembered_user_v1'
+        rememberedUser: 'ghmdc_remembered_user_v1',
+        users: 'ghmdc_users_v1',
+        theme: 'ghmdc_theme_v1'
     };
 
     const loadData = (key, fallback) => {
@@ -53,28 +55,67 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentUser = null;
     let currentView = 'login-container';
     let patientModal = new bootstrap.Modal(document.getElementById('patient-modal'));
+    let labResultModal = new bootstrap.Modal(document.getElementById('lab-result-modal'));
+    let changePasswordModal = new bootstrap.Modal(document.getElementById('change-password-modal'));
+    let currentEditResultId = null;
 
     const loginContainer = document.getElementById('login-container');
     const appContainer = document.getElementById('app-container');
     const loginForm = document.getElementById('login-form');
     const loginError = document.getElementById('login-error');
     const logoutBtn = document.getElementById('logout-btn');
+    const changePwdBtn = document.getElementById('change-pwd-btn');
+    const changePwdBtnMobile = document.getElementById('change-pwd-btn-mobile');
     const navLinks = document.querySelectorAll('.nav-link');
     const allViews = document.querySelectorAll('.view');
     const patientsTableBody = document.getElementById('patients-table-body');
     const billingTableBody = document.getElementById('billing-table-body');
     const patientSearch = document.getElementById('patient-search');
+    const themeToggle = document.getElementById('theme-toggle');
+    const themeToggleLogin = document.getElementById('theme-toggle-login');
 
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
-    // Password toggle (ensure button wired and accessible)
-    (function wirePasswordToggle(){
+    // Theme toggle functionality
+    const setTheme = (theme) => {
+        document.documentElement.setAttribute('data-theme', theme);
+        const isDark = theme === 'dark';
+        const toggleIcons = document.querySelectorAll('.theme-toggle-btn i');
+        toggleIcons.forEach(icon => {
+            icon.classList.toggle('bi-moon-stars-fill', !isDark);
+            icon.classList.toggle('bi-sun-fill', isDark);
+        });
+        saveData(LS_KEYS.theme, theme);
+    };
+
+    const toggleTheme = () => {
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+        setTheme(currentTheme === 'light' ? 'dark' : 'light');
+    };
+
+    // Initialize theme from localStorage
+    const savedTheme = loadData(LS_KEYS.theme, 'light');
+    setTheme(savedTheme);
+
+    // Theme toggle event listeners
+    [themeToggle, themeToggleLogin].forEach(btn => {
+        if (btn) {
+            btn.addEventListener('click', toggleTheme);
+            btn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                toggleTheme();
+            });
+        }
+    });
+
+    // Password toggle
+    (function wirePasswordToggle() {
         const btn = document.getElementById('pwd-toggle');
-        const pw  = document.getElementById('password');
+        const pw = document.getElementById('password');
         if (!btn || !pw) return;
 
-        // Prevent focus loss when clicking the icon
         btn.addEventListener('mousedown', e => e.preventDefault());
+        btn.addEventListener('touchstart', e => e.preventDefault());
 
         btn.addEventListener('click', () => {
             const showing = pw.type === 'text';
@@ -87,7 +128,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 icon.classList.toggle('bi-eye-slash', !showing);
             }
 
-            // keep focus on password field for accessibility
             pw.focus({ preventScroll: true });
         });
     })();
@@ -102,6 +142,11 @@ document.addEventListener('DOMContentLoaded', () => {
         return max + 1;
     };
 
+    const generateResultId = () => {
+        const max = diagnosticResults.length ? Math.max(...diagnosticResults.map(r => Number(r.resultId) || 0)) : 0;
+        return max + 1;
+    };
+
     const showView = (viewId) => {
         allViews.forEach(view => view.classList.remove('active'));
         const target = document.getElementById(viewId);
@@ -112,6 +157,10 @@ document.addEventListener('DOMContentLoaded', () => {
             else link.classList.remove('active');
         });
         currentView = viewId;
+
+        if (viewId === 'reports-view') {
+            updateDashboardCharts();
+        }
     };
 
     loginForm.addEventListener('submit', (e) => {
@@ -122,14 +171,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const remember = rememberEl ? rememberEl.checked : false;
         const signinBtn = document.getElementById('signin-btn');
 
-        // Show loading state
         signinBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Loading...';
         signinBtn.disabled = true;
 
-        setTimeout(() => { // Simulate async login
+        setTimeout(() => {
             if (users[username] && users[username].password === password) {
                 currentUser = { username, role: users[username].role };
-                if (remember) localStorage.setItem(LS_KEYS.rememberedUser, JSON.stringify({ username }));
+                if (remember) saveData(LS_KEYS.rememberedUser, { username });
                 else localStorage.removeItem(LS_KEYS.rememberedUser);
 
                 loginContainer.classList.add('d-none');
@@ -141,7 +189,6 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 loginError.classList.remove('d-none');
             }
-            // Reset button state
             signinBtn.innerHTML = 'Sign in';
             signinBtn.disabled = false;
         }, 800);
@@ -161,6 +208,18 @@ document.addEventListener('DOMContentLoaded', () => {
         loginContainer.classList.remove('d-none');
     });
 
+    [changePwdBtn, changePwdBtnMobile].forEach(btn => {
+        if (btn) {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                document.getElementById('pwd-user').value = currentUser ? currentUser.username : '';
+                document.getElementById('pwd-old').value = '';
+                document.getElementById('pwd-new').value = '';
+                changePasswordModal.show();
+            });
+        }
+    });
+
     const initializeUserInterface = () => {
         document.getElementById('user-role').textContent = currentUser.role;
         const isManagement = currentUser.role === 'Management';
@@ -173,12 +232,13 @@ document.addEventListener('DOMContentLoaded', () => {
             renderBillingTable();
             renderReports();
         }
+        initDashboardCharts();
     };
 
     // --- RENDERERS ---
     const renderDashboard = () => {
         document.getElementById('total-patients-stat').textContent = patients.length;
-        const pendingResults = diagnosticResults.filter(r => (r.result || '').toString().toLowerCase() === 'pending').length;
+        const pendingResults = diagnosticResults.filter(r => r.status === 'Pending').length;
         document.getElementById('pending-results-stat').textContent = pendingResults;
         const totalRevenue = billing.filter(b => b.status === 'Paid').reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
         document.getElementById('total-revenue-stat').textContent = currencyFormatter.format(totalRevenue);
@@ -201,9 +261,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${patient.dob}</td>
                 <td>${patient.contact}</td>
                 <td>
-                    <button class="btn btn-sm btn-info view-details-btn" data-id="${patient.id}" title="View">View</button>
-                    <button class="btn btn-sm btn-secondary edit-patient-btn" data-id="${patient.id}" title="Edit">Edit</button>
-                    <button class="btn btn-sm btn-danger delete-patient-btn" data-id="${patient.id}" title="Delete">Delete</button>
+                    <div class="d-flex gap-1 flex-wrap">
+                        <button class="btn btn-sm btn-info view-details-btn" data-id="${patient.id}" title="View">View</button>
+                        <button class="btn btn-sm btn-secondary edit-patient-btn" data-id="${patient.id}" title="Edit">Edit</button>
+                        <button class="btn btn-sm btn-danger delete-patient-btn" data-id="${patient.id}" title="Delete">Delete</button>
+                    </div>
                 </td>
             `;
             patientsTableBody.appendChild(row);
@@ -224,7 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${patient ? patient.name : 'Unknown'}</td>
                 <td>${bill.date}</td>
                 <td>${currencyFormatter.format(Number(bill.amount) || 0)}</td>
-                <td><span class="badge ${bill.status === 'Paid' ? 'bg-success' : 'bg-danger'}">${bill.status}</span></td>
+                <td><span class="badge ${bill.status === 'Paid' ? 'bg-success' : bill.status === 'Partial' ? 'bg-warning' : 'bg-danger'}">${bill.status}</span></td>
             `;
             billingTableBody.appendChild(row);
         });
@@ -233,7 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const renderReports = () => {
         document.getElementById('report-total-patients').textContent = patients.length;
         const totalBilled = billing.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
-        const totalCollected = billing.filter(b => b.status === 'Paid').reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+        const totalCollected = billing.reduce((sum, b) => sum + (b.payments ? b.payments.reduce((ps, p) => ps + (Number(p.amount) || 0), 0) : (b.status === 'Paid' ? Number(b.amount) || 0 : 0)), 0);
         document.getElementById('report-total-billed').textContent = currencyFormatter.format(totalBilled);
         document.getElementById('report-total-collected').textContent = currencyFormatter.format(totalCollected);
     };
@@ -254,10 +316,26 @@ document.addEventListener('DOMContentLoaded', () => {
         const patientResults = diagnosticResults.filter(r => r.patientId === patientId);
         if (patientResults.length) {
             patientResults.forEach(res => {
-                resultsBody.innerHTML += `<tr><td>${res.date}</td><td>${res.testName}</td><td>${res.result}</td></tr>`;
+                const statusClass = `badge-${res.status.toLowerCase()}`;
+                const filesCount = res.files ? res.files.length : 0;
+                resultsBody.innerHTML += `
+                    <tr>
+                        <td>${res.date}</td>
+                        <td>${res.testName}</td>
+                        <td>${res.result}</td>
+                        <td><span class="badge ${statusClass}">${res.status}</span></td>
+                        <td>${filesCount}</td>
+                        <td>
+                            <div class="d-flex gap-1 flex-wrap">
+                                <button class="btn btn-sm btn-secondary edit-result-btn" data-id="${res.resultId}">Edit</button>
+                                <button class="btn btn-sm btn-danger delete-result-btn" data-id="${res.resultId}">Delete</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
             });
         } else {
-            resultsBody.innerHTML = '<tr><td colspan="3" class="text-center">No diagnostic results found.</td></tr>';
+            resultsBody.innerHTML = '<tr><td colspan="6" class="text-center">No diagnostic results found.</td></tr>';
         }
 
         const billingBody = document.getElementById('patient-billing-table-body');
@@ -265,17 +343,58 @@ document.addEventListener('DOMContentLoaded', () => {
         const patientBills = billing.filter(b => b.patientId === patientId);
         if (patientBills.length) {
             patientBills.forEach(bill => {
-                billingBody.innerHTML += `<tr><td>${bill.invoiceId}</td><td>${bill.date}</td><td>${currencyFormatter.format(Number(bill.amount) || 0)}</td><td>${bill.status}</td></tr>`;
+                const statusClass = bill.status === 'Paid' ? 'bg-success' : bill.status === 'Partial' ? 'bg-warning' : 'bg-danger';
+                billingBody.innerHTML += `
+                    <tr>
+                        <td>${bill.invoiceId}</td>
+                        <td>${bill.date}</td>
+                        <td>${currencyFormatter.format(Number(bill.amount) || 0)}</td>
+                        <td><span class="badge ${statusClass}">${bill.status}</span></td>
+                        <td>
+                            ${bill.status !== 'Paid' ? `<button class="btn btn-sm btn-success pay-bill-btn" data-id="${bill.invoiceId}">Pay</button>` : ''}
+                        </td>
+                    </tr>
+                `;
             });
         } else {
-            billingBody.innerHTML = '<tr><td colspan="4" class="text-center">No billing history found.</td></tr>';
+            billingBody.innerHTML = '<tr><td colspan="5" class="text-center">No billing history found.</td></tr>';
         }
+
+        renderPatientDocuments(patientId);
 
         showView('patient-detail-view');
     };
 
+    const renderPatientDocuments = (patientId) => {
+        const ul = document.getElementById('patient-doc-list');
+        ul.innerHTML = '';
+        const patient = patients.find(p => p.id === patientId);
+        if (!patient || !patient.documents || !patient.documents.length) {
+            ul.innerHTML = '<li class="list-group-item text-muted">No documents uploaded</li>'; return;
+        }
+        patient.documents.forEach(doc => {
+            const li = document.createElement('li');
+            li.className = 'list-group-item';
+            li.innerHTML = `
+                <div class="flex-grow-1">
+                    <strong>${doc.name}</strong><br><small class="text-muted">${new Date(doc.uploadedAt).toLocaleString()}</small>
+                </div>
+                <div class="d-flex gap-1 align-items-center flex-wrap">
+                    <button class="btn btn-sm btn-outline-secondary download-doc-btn" data-doc-id="${doc.id}">Download</button>
+                    <button class="btn btn-sm btn-outline-danger delete-doc-btn" data-doc-id="${doc.id}">Delete</button>
+                </div>
+            `;
+            ul.appendChild(li);
+        });
+    };
+
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const viewId = link.dataset.view;
+            if (viewId) showView(viewId);
+        });
+        link.addEventListener('touchend', (e) => {
             e.preventDefault();
             const viewId = link.dataset.view;
             if (viewId) showView(viewId);
@@ -298,15 +417,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     patientsTableBody.addEventListener('click', (e) => {
-        const btn = e.target;
-        if (btn.closest('.view-details-btn')) {
-            const patientId = Number(btn.dataset.id);
-            renderPatientDetails(patientId);
-            return;
-        }
+        const btn = e.target.closest('button');
+        if (!btn) return;
 
-        if (btn.closest('.edit-patient-btn')) {
-            const patientId = Number(btn.dataset.id);
+        const patientId = Number(btn.dataset.id);
+        if (btn.classList.contains('view-details-btn')) {
+            renderPatientDetails(patientId);
+        } else if (btn.classList.contains('edit-patient-btn')) {
             const patient = patients.find(p => p.id === patientId);
             if (!patient) return;
             document.getElementById('patient-modal-title').textContent = 'Edit Patient';
@@ -317,11 +434,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('patient-address').value = patient.address || '';
             document.getElementById('patient-history').value = patient.history || '';
             patientModal.show();
-            return;
-        }
-
-        if (btn.closest('.delete-patient-btn')) {
-            const patientId = Number(btn.dataset.id);
+        } else if (btn.classList.contains('delete-patient-btn')) {
             if (!confirm('Delete this patient and all related records?')) return;
             patients = patients.filter(p => p.id !== patientId);
             diagnosticResults = diagnosticResults.filter(r => r.patientId !== patientId);
@@ -333,7 +446,6 @@ document.addEventListener('DOMContentLoaded', () => {
             renderDashboard();
             renderBillingTable();
             renderReports();
-            return;
         }
     });
 
@@ -364,6 +476,7 @@ document.addEventListener('DOMContentLoaded', () => {
             contact: document.getElementById('patient-contact').value.trim(),
             address: document.getElementById('patient-address').value.trim(),
             history: document.getElementById('patient-history').value.trim(),
+            documents: idInput ? patients.find(p => p.id === Number(idInput)).documents || [] : []
         };
 
         if (!payload.name || !payload.dob || !payload.contact) {
@@ -387,100 +500,83 @@ document.addEventListener('DOMContentLoaded', () => {
         patientModal.hide();
     });
 
-    if (currentUser) initializeUserInterface();
-
-    saveData(LS_KEYS.patients, patients);
-    saveData(LS_KEYS.results, diagnosticResults);
-    saveData(LS_KEYS.billing, billing);
-
-    /* --- New feature implementations --- */
-
-    /* Change password / reset */
+    // New features
     function changePassword(username, oldPwd, newPwd) {
-        if (!username || !newPwd) throw new Error('username and new password required');
-        const allUsersRaw = localStorage.getItem('ghmdc_users_v1') || null;
-        let allUsers = allUsersRaw ? JSON.parse(allUsersRaw) : null;
-        if (!allUsers) {
-            // fallback to built-in users object if missing
-            allUsers = { ...users };
-        }
-        if (!allUsers[username]) throw new Error('user not found');
-        if (allUsers[username].password !== oldPwd) throw new Error('old password mismatch');
-        allUsers[username].password = newPwd;
-        localStorage.setItem('ghmdc_users_v1', JSON.stringify(allUsers));
-        return true;
+        if (!username || !newPwd) throw new Error('Username and new password required');
+        if (users[username].password !== oldPwd) throw new Error('Incorrect old password');
+        users[username].password = newPwd;
+        saveData(LS_KEYS.users, users);
     }
 
-    /* Upload patient document (file -> base64) */
     function uploadDocumentToPatient(patientId, file) {
         return new Promise((resolve, reject) => {
-            const patient = patients.find(p => p.id === patientId);
-            if (!patient) return reject(new Error('patient not found'));
             const reader = new FileReader();
-            reader.onload = (e) => {
+            reader.onload = () => {
+                const patient = patients.find(p => p.id === patientId);
+                if (!patient) return reject(new Error('Patient not found'));
                 patient.documents = patient.documents || [];
-                const doc = { id: Date.now(), name: file.name, type: file.type, data: e.target.result, uploadedAt: new Date().toISOString() };
-                patient.documents.push(doc);
+                const docId = patient.documents.length ? Math.max(...patient.documents.map(d => d.id)) + 1 : 1;
+                patient.documents.push({
+                    id: docId,
+                    name: file.name,
+                    uploadedAt: Date.now(),
+                    data: reader.result
+                });
                 saveData(LS_KEYS.patients, patients);
-                resolve(doc);
+                resolve(patient.documents[patient.documents.length - 1]);
             };
-            reader.onerror = () => reject(new Error('file read error'));
+            reader.onerror = reject;
             reader.readAsDataURL(file);
         });
     }
 
-    /* Export / Print patient profile */
-    function exportPatientProfile(patientId) {
+    function deleteDocumentFromPatient(patientId, docId) {
         const patient = patients.find(p => p.id === patientId);
-        if (!patient) throw new Error('patient not found');
-        const html = `
-      <html><head><title>Patient ${patient.id}</title><style>body{font-family:Arial;padding:20px}h1{font-size:18px}</style></head>
-      <body>
-        <h1>Patient Profile — ${patient.name} (${patient.id})</h1>
-        <p><strong>DOB:</strong> ${patient.dob}</p>
-        <p><strong>Contact:</strong> ${patient.contact}</p>
-        <p><strong>Address:</strong> ${patient.address || ''}</p>
-        <h3>Medical History</h3><p>${patient.history || 'None'}</p>
-      </body></html>`;
-        const w = window.open('', '_blank');
-        w.document.write(html);
-        w.document.close();
-        w.print();
-        w.close();
+        if (!patient) return;
+        patient.documents = patient.documents.filter(d => d.id !== docId);
+        saveData(LS_KEYS.patients, patients);
     }
 
-    /* Laboratory results - add, attach, update, download */
-    function addLabResult({ patientId, testName, result = '', date = (new Date()).toISOString().slice(0,10), status = 'Pending', attachments = [] }) {
-        const rId = diagnosticResults.length ? Math.max(...diagnosticResults.map(r=>r.resultId)) + 1 : 1;
-        const item = { resultId: rId, patientId, testName, result, date, status, attachments };
-        diagnosticResults.push(item);
+    function addLabResult({ patientId, testName, result, status = 'Pending' }) {
+        const resultId = generateResultId();
+        const entry = { resultId, patientId, date: new Date().toISOString().slice(0, 10), testName, result, status, files: [] };
+        diagnosticResults.push(entry);
         saveData(LS_KEYS.results, diagnosticResults);
-        return item;
-    }
-
-    function attachFileToResult(resultId, file) {
-        return new Promise((resolve, reject) => {
-            const res = diagnosticResults.find(r => r.resultId === resultId);
-            if (!res) return reject(new Error('result not found'));
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                res.attachments = res.attachments || [];
-                const at = { id: Date.now(), name: file.name, type: file.type, data: e.target.result, uploadedAt: new Date().toISOString() };
-                res.attachments.push(at);
-                saveData(LS_KEYS.results, diagnosticResults);
-                resolve(at);
-            };
-            reader.onerror = () => reject(new Error('file read error'));
-            reader.readAsDataURL(file);
-        });
+        return entry;
     }
 
     function updateLabResult(resultId, updates) {
         const idx = diagnosticResults.findIndex(r => r.resultId === resultId);
-        if (idx === -1) throw new Error('result not found');
+        if (idx === -1) throw new Error('Result not found');
         diagnosticResults[idx] = { ...diagnosticResults[idx], ...updates };
         saveData(LS_KEYS.results, diagnosticResults);
         return diagnosticResults[idx];
+    }
+
+    function deleteLabResult(resultId) {
+        diagnosticResults = diagnosticResults.filter(r => r.resultId !== resultId);
+        saveData(LS_KEYS.results, diagnosticResults);
+    }
+
+    function attachFileToResult(resultId, file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const result = diagnosticResults.find(r => r.resultId === resultId);
+                if (!result) return reject(new Error('Result not found'));
+                result.files = result.files || [];
+                const fileId = result.files.length + 1;
+                result.files.push({
+                    id: fileId,
+                    name: file.name,
+                    data: reader.result
+                });
+                saveData(LS_KEYS.results, diagnosticResults);
+                resolve(result.files[result.files.length - 1]);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
     }
 
     function downloadAttachmentBase64(item) {
@@ -492,229 +588,47 @@ document.addEventListener('DOMContentLoaded', () => {
         a.remove();
     }
 
-    /* Billing (generate invoice, record payment, reports) */
-    function generateInvoiceForPatient(patientId, items = []) {
-        const invoiceId = billing.length ? Math.max(...billing.map(b => b.invoiceId)) + 1 : 5001;
-        const amount = items.reduce((s,i) => s + (Number(i.amount)||0), 0);
-        const inv = { invoiceId, patientId, date: (new Date()).toISOString().slice(0,10), items, amount, status: amount>0 ? 'Unpaid' : 'Paid', payments: [] };
+    function generateInvoiceForPatient(patientId, amount = 0) {
+        const invoiceId = generateInvoiceId();
+        const inv = { invoiceId, patientId, date: new Date().toISOString().slice(0, 10), amount: Number(amount), status: 'Unpaid', payments: [] };
         billing.push(inv);
         saveData(LS_KEYS.billing, billing);
         return inv;
     }
 
-    function recordPayment(invoiceId, { method = 'Cash', amount = 0, reference = '' } = {}) {
+    function recordPayment(invoiceId, amount) {
         const inv = billing.find(b => b.invoiceId === invoiceId);
-        if (!inv) throw new Error('invoice not found');
-        const payment = { id: Date.now(), method, amount: Number(amount)||0, reference, date: (new Date()).toISOString() };
-        inv.payments = inv.payments || [];
+        if (!inv) throw new Error('Invoice not found');
+        const payment = { id: Date.now(), method: 'Cash', amount: Number(amount), date: new Date().toISOString() };
         inv.payments.push(payment);
-        const paidTotal = inv.payments.reduce((s,p) => s + (Number(p.amount)||0), 0);
+        const paidTotal = inv.payments.reduce((s, p) => s + p.amount, 0);
         inv.status = paidTotal >= inv.amount ? 'Paid' : (paidTotal > 0 ? 'Partial' : 'Unpaid');
         saveData(LS_KEYS.billing, billing);
         return payment;
     }
 
     function exportBillingCSV() {
-        const headers = ['InvoiceId','PatientId','Date','Amount','Status'];
+        const headers = ['InvoiceId', 'PatientId', 'Date', 'Amount', 'Status'];
         const rows = billing.map(b => [b.invoiceId, b.patientId, b.date, b.amount, b.status].join(','));
         const csv = [headers.join(','), ...rows].join('\n');
         const blob = new Blob([csv], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = 'billing.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+        const a = document.createElement('a'); a.href = url; a.download = 'billing.csv'; a.click(); URL.revokeObjectURL(url);
     }
 
-    /* Charts: initialize/update revenue charts if canvas present */
-    function initDashboardCharts() {
-        try {
-            const trendCtx = document.getElementById('revenueTrendChart');
-            const breakdownCtx = document.getElementById('revenueBreakdownChart');
-            const reportCtx = document.getElementById('financialReportChart');
-
-            if (trendCtx && !window.revenueTrendChart) {
-                window.revenueTrendChart = new Chart(trendCtx, {
-                    type: 'line',
-                    data: { labels: [], datasets: [{ label: 'Revenue', data: [], borderColor: '#0d6efd', backgroundColor: 'rgba(13,110,253,0.08)', fill: true, tension: 0.3 }] },
-                    options: { responsive:true, plugins:{legend:{display:false}} }
-                });
-            }
-            if (breakdownCtx && !window.revenueBreakdownChart) {
-                window.revenueBreakdownChart = new Chart(breakdownCtx, {
-                    type: 'doughnut',
-                    data: { labels: ['Paid','Unpaid'], datasets: [{ data: [0,0], backgroundColor: ['#20c997','#ff6b6b'] }] },
-                    options: { responsive:true, plugins:{legend:{position:'bottom'}} }
-                });
-            }
-
-            // Financial report chart (monthly billed vs collected)
-            if (reportCtx && !window.financialReportChart) {
-                window.financialReportChart = new Chart(reportCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: [],
-                        datasets: [
-                            { label: 'Billed', data: [], backgroundColor: '#0d6efd' },
-                            { label: 'Collected', data: [], backgroundColor: '#20c997' }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        scales: {
-                            x: { stacked: false },
-                            y: { beginAtZero:true }
-                        },
-                        plugins: { legend: { position: 'bottom' } }
-                    }
-                });
-            }
-            updateDashboardCharts();
-        } catch (e) { console.warn('chart init failed', e); }
-    }
-
-    function updateDashboardCharts() {
-        if (window.revenueTrendChart) {
-            const byDate = {};
-            billing.forEach(b => { byDate[b.date] = (byDate[b.date] || 0) + (Number(b.amount) || 0); });
-            const dates = Object.keys(byDate).sort();
-            window.revenueTrendChart.data.labels = dates;
-            window.revenueTrendChart.data.datasets[0].data = dates.map(d => byDate[d]);
-            window.revenueTrendChart.update();
-        }
-        if (window.revenueBreakdownChart) {
-            const paid = billing.filter(b => b.status === 'Paid').reduce((s,b) => s + (Number(b.amount)||0),0);
-            const unpaid = billing.filter(b => b.status !== 'Paid').reduce((s,b) => s + (Number(b.amount)||0),0);
-            window.revenueBreakdownChart.data.datasets[0].data = [paid, unpaid];
-            window.revenueBreakdownChart.update();
-        }
-
-        // update financial report chart (group by YYYY-MM)
-        if (window.financialReportChart) {
-            const byMonth = {};
-            billing.forEach(b => {
-                const month = (b.date || '').slice(0,7) || 'Unknown';
-                byMonth[month] = byMonth[month] || { billed: 0, collected: 0 };
-                const amt = Number(b.amount) || 0;
-                byMonth[month].billed += amt;
-                // collected: prefer payments array, fallback to status === 'Paid'
-                if (Array.isArray(b.payments) && b.payments.length) {
-                    byMonth[month].collected += b.payments.reduce((s,p) => s + (Number(p.amount)||0), 0);
-                } else if (b.status === 'Paid') {
-                    byMonth[month].collected += amt;
-                }
-            });
-            const months = Object.keys(byMonth).sort();
-            window.financialReportChart.data.labels = months;
-            window.financialReportChart.data.datasets[0].data = months.map(m => byMonth[m].billed);
-            window.financialReportChart.data.datasets[1].data = months.map(m => byMonth[m].collected);
-            window.financialReportChart.update();
-        }
-    }
-
-    /* UI wiring for new controls (minimal) */
-    document.addEventListener('click', (e) => {
-        const tgt = e.target;
-
-        if (tgt && tgt.matches('#upload-doc-btn')) {
-            const fileInput = document.getElementById('patient-doc-input');
-            const pid = Number(document.getElementById('patient-id-detail').textContent) || null;
-            if (!pid) return alert('Open a patient first');
-            const file = fileInput.files && fileInput.files[0];
-            if (!file) return alert('Select a file first');
-            uploadDocumentToPatient(pid, file).then(doc => {
-                renderPatientDocuments(pid);
-                fileInput.value = '';
-            }).catch(err => alert(err.message));
-        }
-
-        if (tgt && tgt.matches('#add-result-btn')) {
-            const pid = Number(document.getElementById('patient-id-detail').textContent) || null;
-            if (!pid) return alert('Open a patient first');
-            document.getElementById('lab-patient-id').value = pid;
-            const m = new bootstrap.Modal(document.getElementById('lab-result-modal'));
-            m.show();
-        }
-
-        if (tgt && tgt.matches('#generate-invoice-btn')) {
-            const pid = Number(document.getElementById('patient-id-detail').textContent) || null;
-            if (!pid) return alert('Open a patient first');
-            const inv = generateInvoiceForPatient(pid, [{desc:'Consultation', amount:500}]);
-            renderBillingTable(); renderPatientBilling(pid);
-            alert('Invoice generated: ' + inv.invoiceId);
-            updateDashboardCharts();
-        }
-
-        if (tgt && tgt.matches('#export-patient-btn')) {
-            const pid = Number(document.getElementById('patient-id-detail').textContent) || null;
-            if (!pid) return alert('Open a patient first');
-            exportPatientProfile(pid);
-        }
-
-        if (tgt && tgt.matches('#print-invoices-btn')) {
-            exportBillingCSV();
-            alert('Billing CSV exported');
-        }
-    });
-
-    /* Lab result modal submit */
-    const labForm = document.getElementById('lab-result-form');
-    if (labForm) labForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const pid = Number(document.getElementById('lab-patient-id').value);
-        const testName = document.getElementById('lab-test-name').value.trim();
-        const resultText = document.getElementById('lab-result-text').value.trim();
-        const status = document.getElementById('lab-status').value;
-        const file = document.getElementById('lab-file-input').files[0];
-        const entry = addLabResult({ patientId: pid, testName, result: resultText, status });
-        if (file) {
-            attachFileToResult(entry.resultId, file).catch(console.error);
-        }
-        saveData(LS_KEYS.results, diagnosticResults);
-        renderPatientDetails(pid);
-        bootstrap.Modal.getInstance(document.getElementById('lab-result-modal')).hide();
-    });
-
-    /* Helper to render patient documents in the detail view */
-    function renderPatientDocuments(patientId) {
-        const ul = document.getElementById('patient-doc-list');
-        ul.innerHTML = '';
+    function exportPatientProfile(patientId) {
         const patient = patients.find(p => p.id === patientId);
-        if (!patient || !patient.documents || !patient.documents.length) {
-            ul.innerHTML = '<li class="list-group-item text-muted">No documents uploaded</li>'; return;
-        }
-        patient.documents.forEach(doc => {
-            const li = document.createElement('li');
-            li.className = 'list-group-item';
-            li.innerHTML = `<div class="flex-grow-1"><strong>${doc.name}</strong><br><small class="text-muted">${new Date(doc.uploadedAt).toLocaleString()}</small></div>
-                        <div class="d-flex gap-2 align-items-center">
-                          <button class="btn btn-sm btn-outline-secondary" data-doc-id="${doc.id}" data-action="download">Download</button>
-                        </div>`;
-            ul.appendChild(li);
-        });
+        if (!patient) return;
+        const profile = {
+            ...patient,
+            results: diagnosticResults.filter(r => r.patientId === patientId),
+            billing: billing.filter(b => b.patientId === patientId)
+        };
+        const blob = new Blob([JSON.stringify(profile, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = `patient_${patientId}.json`; a.click(); URL.revokeObjectURL(url);
     }
 
-    /* wire download document clicks */
-    document.getElementById('patient-doc-list') && document.getElementById('patient-doc-list').addEventListener('click', (e) => {
-        const btn = e.target.closest('button');
-        if (!btn) return;
-        const aid = Number(btn.dataset.docId);
-        const pid = Number(document.getElementById('patient-id-detail').textContent) || null;
-        const patient = patients.find(p => p.id === pid);
-        if (!patient) return;
-        const doc = (patient.documents || []).find(d => d.id === aid);
-        if (!doc) return;
-        downloadAttachmentBase64(doc);
-    });
-
-    /* Expose API for console */
-    window.ghmdc = Object.assign(window.ghmdc || {}, {
-        changePassword, uploadDocumentToPatient, exportPatientProfile,
-        addLabResult, attachFileToResult, updateLabResult, downloadAttachmentBase64,
-        generateInvoiceForPatient, recordPayment, exportBillingCSV
-    });
-
-    /* initialize charts after DOM ready & initial render */
-    initDashboardCharts();
-    updateDashboardCharts();
-});
     function initDashboardCharts() {
         try {
             const trendCtx = document.getElementById('revenueTrendChart');
@@ -725,103 +639,245 @@ document.addEventListener('DOMContentLoaded', () => {
             if (trendCtx && !window.revenueTrendChart) {
                 window.revenueTrendChart = new Chart(trendCtx, {
                     type: 'line',
-                    data: { labels: [], datasets: [{ label: 'Revenue', data: [], borderColor: '#0d6efd', backgroundColor: 'rgba(13,110,253,0.08)', fill: true, tension: 0.3 }] },
-                    options: { responsive:true, plugins:{legend:{display:false}} }
+                    data: { labels: [], datasets: [{ label: 'Revenue', data: [], borderColor: '#007bff', backgroundColor: 'rgba(0,123,255,0.08)', fill: true, tension: 0.3 }] },
+                    options: { 
+                        responsive: true, 
+                        plugins: { legend: { display: false } },
+                        scales: { x: { ticks: { maxRotation: 45, minRotation: 45, font: { size: 10 } } } }
+                    }
                 });
             }
             if (breakdownCtx && !window.revenueBreakdownChart) {
                 window.revenueBreakdownChart = new Chart(breakdownCtx, {
                     type: 'doughnut',
-                    data: { labels: ['Paid','Unpaid'], datasets: [{ data: [0,0], backgroundColor: ['#20c997','#ff6b6b'] }] },
-                    options: { responsive:true, plugins:{legend:{position:'bottom'}} }
+                    data: { labels: ['Paid', 'Unpaid'], datasets: [{ data: [0, 0], backgroundColor: ['#28a745', '#dc3545'] }] },
+                    options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } } }
                 });
             }
 
             if (reportCtx && !window.financialReportChart) {
                 window.financialReportChart = new Chart(reportCtx, {
                     type: 'bar',
-                    data: { labels: [], datasets: [
-                        { label: 'Billed', data: [], backgroundColor: '#0d6efd' },
-                        { label: 'Collected', data: [], backgroundColor: '#20c997' }
-                    ]},
-                    options: { responsive:true, scales: { y:{beginAtZero:true} }, plugins:{legend:{position:'bottom'}} }
+                    data: {
+                        labels: [],
+                        datasets: [
+                            { label: 'Billed', data: [], backgroundColor: '#007bff' },
+                            { label: 'Collected', data: [], backgroundColor: '#28a745' }
+                        ]
+                    },
+                    options: { 
+                        responsive: true, 
+                        scales: { 
+                            y: { beginAtZero: true, ticks: { font: { size: 10 } } }, 
+                            x: { ticks: { maxRotation: 45, minRotation: 45, font: { size: 10 } } } 
+                        }, 
+                        plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } } 
+                    }
                 });
             }
 
             if (reportBreakdownCtx && !window.reportBreakdownChart) {
                 window.reportBreakdownChart = new Chart(reportBreakdownCtx, {
                     type: 'doughnut',
-                    data: { labels: ['Paid','Partial','Unpaid'], datasets: [{ data: [0,0,0], backgroundColor: ['#20c997','#ffc107','#ff6b6b'] }] },
-                    options: { responsive:true, plugins:{legend:{position:'bottom'}} }
+                    data: { labels: ['Paid', 'Partial', 'Unpaid'], datasets: [{ data: [0, 0, 0], backgroundColor: ['#28a745', '#ffc107', '#dc3545'] }] },
+                    options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } } }
                 });
             }
 
             updateDashboardCharts();
-        } catch (e) { console.warn('chart init failed', e); }
+        } catch (e) { console.warn('Chart init failed', e); }
     }
 
     function updateDashboardCharts() {
-        // existing updates...
+        const byDate = {};
+        billing.forEach(b => { byDate[b.date] = (byDate[b.date] || 0) + (Number(b.amount) || 0); });
+        const dates = Object.keys(byDate).sort();
+        if (window.revenueTrendChart) {
+            window.revenueTrendChart.data.labels = dates;
+            window.revenueTrendChart.data.datasets[0].data = dates.map(d => byDate[d]);
+            window.revenueTrendChart.update();
+        }
+        if (window.revenueBreakdownChart) {
+            const paid = billing.filter(b => b.status === 'Paid').reduce((s, b) => s + (Number(b.amount) || 0), 0);
+            const unpaid = billing.filter(b => b.status !== 'Paid').reduce((s, b) => s + (Number(b.amount) || 0), 0);
+            window.revenueBreakdownChart.data.datasets[0].data = [paid, unpaid];
+            window.revenueBreakdownChart.update();
+        }
+
+        const byMonth = {};
+        billing.forEach(b => {
+            const month = (b.date || '').slice(0, 7) || 'Unknown';
+            byMonth[month] = byMonth[month] || { billed: 0, collected: 0 };
+            const amt = Number(b.amount) || 0;
+            byMonth[month].billed += amt;
+            byMonth[month].collected += b.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+        });
+        const months = Object.keys(byMonth).sort();
         if (window.financialReportChart) {
-            const byMonth = {};
-            billing.forEach(b => {
-                const month = (b.date || '').slice(0,7) || 'Unknown';
-                byMonth[month] = byMonth[month] || { billed: 0, collected: 0 };
-                const amt = Number(b.amount) || 0;
-                byMonth[month].billed += amt;
-                if (Array.isArray(b.payments) && b.payments.length) {
-                    byMonth[month].collected += b.payments.reduce((s,p) => s + (Number(p.amount)||0), 0);
-                } else if (b.status === 'Paid') {
-                    byMonth[month].collected += amt;
-                }
-            });
-            const months = Object.keys(byMonth).sort();
             window.financialReportChart.data.labels = months.map(m => {
-                // human-friendly label: "YYYY-MM" -> "MMM YYYY"
-                try { const [y,mo] = m.split('-'); return new Date(Number(y), Number(mo)-1).toLocaleString(undefined, { month:'short', year:'numeric' }); } catch { return m; }
+                try { const [y, mo] = m.split('-'); return new Date(Number(y), Number(mo) - 1).toLocaleString(undefined, { month: 'short', year: 'numeric' }); } catch { return m; }
             });
             window.financialReportChart.data.datasets[0].data = months.map(m => byMonth[m].billed);
             window.financialReportChart.data.datasets[1].data = months.map(m => byMonth[m].collected);
             window.financialReportChart.update();
         }
-
         if (window.reportBreakdownChart) {
-            const paid = billing.filter(b => b.status === 'Paid').reduce((s,b) => s + (Number(b.amount)||0),0);
-            const partial = billing.filter(b => b.status === 'Partial').reduce((s,b) => s + (Number(b.amount)||0),0);
-            const unpaid = billing.filter(b => b.status === 'Unpaid' || b.status === undefined).reduce((s,b) => s + (Number(b.amount)||0),0);
+            const paid = billing.filter(b => b.status === 'Paid').reduce((s, b) => s + (Number(b.amount) || 0), 0);
+            const partial = billing.filter(b => b.status === 'Partial').reduce((s, b) => s + (Number(b.amount) || 0), 0);
+            const unpaid = billing.filter(b => b.status === 'Unpaid').reduce((s, b) => s + (Number(b.amount) || 0), 0);
             window.reportBreakdownChart.data.datasets[0].data = [paid, partial, unpaid];
             window.reportBreakdownChart.update();
         }
-
-        // keep existing charts in sync
-        if (window.revenueTrendChart || window.revenueBreakdownChart) {
-            // existing logic already present earlier in file - ensure it's called as well
-            try {
-                const byDate = {};
-                billing.forEach(b => { byDate[b.date] = (byDate[b.date] || 0) + (Number(b.amount) || 0); });
-                const dates = Object.keys(byDate).sort();
-                if (window.revenueTrendChart) {
-                    window.revenueTrendChart.data.labels = dates;
-                    window.revenueTrendChart.data.datasets[0].data = dates.map(d => byDate[d]);
-                    window.revenueTrendChart.update();
-                }
-                if (window.revenueBreakdownChart) {
-                    const paid = billing.filter(b => b.status === 'Paid').reduce((s,b) => s + (Number(b.amount)||0),0);
-                    const unpaid = billing.filter(b => b.status !== 'Paid').reduce((s,b) => s + (Number(b.amount)||0),0);
-                    window.revenueBreakdownChart.data.datasets[0].data = [paid, unpaid];
-                    window.revenueBreakdownChart.update();
-                }
-            } catch (e) { console.warn(e); }
-        }
     }
 
-// ensure reports view refreshes charts
-    const originalShowView = showView;
-    showView = (viewId) => {
-        originalShowView(viewId);
-        if (viewId === 'reports-view') {
-            // initialize charts if not yet created and refresh data
-            initDashboardCharts();
-            updateDashboardCharts();
+    // UI wiring
+    document.addEventListener('click', (e) => {
+        const tgt = e.target.closest('button');
+        if (!tgt) return;
+
+        if (tgt.id === 'upload-doc-btn') {
+            const fileInput = document.getElementById('patient-doc-input');
+            const pid = Number(document.getElementById('patient-id-detail').textContent);
+            const file = fileInput.files[0];
+            if (!file) return alert('Select a file');
+            uploadDocumentToPatient(pid, file).then(() => {
+                renderPatientDocuments(pid);
+                fileInput.value = '';
+            }).catch(err => alert(err.message));
+        } else if (tgt.id === 'add-result-btn') {
+            const pid = Number(document.getElementById('patient-id-detail').textContent);
+            document.getElementById('lab-patient-id').value = pid;
+            document.getElementById('lab-test-name').value = '';
+            document.getElementById('lab-result-text').value = '';
+            document.getElementById('lab-status').value = 'Pending';
+            document.getElementById('lab-file-input').value = '';
+            currentEditResultId = null;
+            labResultModal.show();
+        } else if (tgt.id === 'generate-invoice-btn') {
+            const pid = Number(document.getElementById('patient-id-detail').textContent);
+            const amount = prompt('Enter invoice amount:');
+            if (amount && !isNaN(amount) && Number(amount) > 0) {
+                generateInvoiceForPatient(pid, Number(amount));
+                renderPatientDetails(pid); // Refresh patient billing table
+                renderBillingTable(); // Update main billing view
+                renderReports(); // Update financial reports
+                updateDashboardCharts(); // Update charts
+                alert(`Invoice #${generateInvoiceId() - 1} generated for ${currencyFormatter.format(Number(amount))}`);
+            } else {
+                alert('Please enter a valid positive amount.');
+            }
+        } else if (tgt.classList.contains('download-doc-btn')) {
+            const docId = Number(tgt.dataset.docId);
+            const pid = Number(document.getElementById('patient-id-detail').textContent);
+            const patient = patients.find(p => p.id === pid);
+            if (patient && patient.documents) {
+                const doc = patient.documents.find(d => d.id === docId);
+                if (doc) downloadAttachmentBase64(doc);
+            }
+        } else if (tgt.classList.contains('delete-doc-btn')) {
+            const docId = Number(tgt.dataset.docId);
+            const pid = Number(document.getElementById('patient-id-detail').textContent);
+            if (confirm('Delete this document?')) {
+                deleteDocumentFromPatient(pid, docId);
+                renderPatientDocuments(pid);
+            }
+        } else if (tgt.classList.contains('edit-result-btn')) {
+            const resultId = Number(tgt.dataset.id);
+            const result = diagnosticResults.find(r => r.resultId === resultId);
+            if (result) {
+                document.getElementById('lab-patient-id').value = result.patientId;
+                document.getElementById('lab-test-name').value = result.testName;
+                document.getElementById('lab-result-text').value = result.result;
+                document.getElementById('lab-status').value = result.status;
+                document.getElementById('lab-file-input').value = '';
+                currentEditResultId = resultId;
+                labResultModal.show();
+            }
+        } else if (tgt.classList.contains('delete-result-btn')) {
+            const resultId = Number(tgt.dataset.id);
+            if (confirm('Delete this lab result?')) {
+                deleteLabResult(resultId);
+                renderPatientDetails(Number(document.getElementById('patient-id-detail').textContent));
+                renderDashboard();
+            }
+        } else if (tgt.classList.contains('pay-bill-btn')) {
+            const invoiceId = Number(tgt.dataset.id);
+            const inv = billing.find(b => b.invoiceId === invoiceId);
+            if (inv) {
+                const amount = prompt(`Enter payment amount (Total: ${currencyFormatter.format(inv.amount)}):`);
+                if (amount && !isNaN(amount) && Number(amount) > 0) {
+                    recordPayment(invoiceId, Number(amount));
+                    renderPatientDetails(Number(document.getElementById('patient-id-detail').textContent));
+                    renderBillingTable();
+                    renderReports();
+                    updateDashboardCharts();
+                    alert(`Payment of ${currencyFormatter.format(Number(amount))} recorded for Invoice #${invoiceId}`);
+                } else {
+                    alert('Please enter a valid positive amount.');
+                }
+            }
+        } else if (tgt.id === 'export-patient-btn') {
+            const pid = Number(document.getElementById('patient-id-detail').textContent);
+            exportPatientProfile(pid);
+        } else if (tgt.id === 'print-invoices-btn') {
+            exportBillingCSV();
         }
-    };
+    });
+
+    document.getElementById('lab-result-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const patientId = Number(document.getElementById('lab-patient-id').value);
+        const testName = document.getElementById('lab-test-name').value.trim();
+        const resultText = document.getElementById('lab-result-text').value.trim();
+        const status = document.getElementById('lab-status').value;
+        const file = document.getElementById('lab-file-input').files[0];
+
+        if (!testName) {
+            alert('Test name is required.');
+            return;
+        }
+
+        if (currentEditResultId) {
+            updateLabResult(currentEditResultId, { testName, result: resultText, status });
+            if (file) {
+                attachFileToResult(currentEditResultId, file).then(() => {
+                    renderPatientDetails(patientId);
+                    labResultModal.hide();
+                    currentEditResultId = null;
+                }).catch(err => alert(err.message));
+            } else {
+                renderPatientDetails(patientId);
+                labResultModal.hide();
+                currentEditResultId = null;
+            }
+        } else {
+            addLabResult({ patientId, testName, result: resultText, status });
+            if (file) {
+                const resultId = generateResultId() - 1;
+                attachFileToResult(resultId, file).then(() => {
+                    renderPatientDetails(patientId);
+                    labResultModal.hide();
+                }).catch(err => alert(err.message));
+            } else {
+                renderPatientDetails(patientId);
+                labResultModal.hide();
+            }
+        }
+        renderDashboard();
+    });
+
+    document.getElementById('change-password-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const username = document.getElementById('pwd-user').value;
+        const oldPwd = document.getElementById('pwd-old').value;
+        const newPwd = document.getElementById('pwd-new').value;
+
+        try {
+            changePassword(username, oldPwd, newPwd);
+            alert('Password changed successfully.');
+            changePasswordModal.hide();
+        } catch (err) {
+            alert(err.message);
+        }
+    });
+});
